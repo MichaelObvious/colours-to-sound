@@ -24,7 +24,7 @@ type Pulse = Float
 type Beats = Float
 
 sampleRate :: Float
-sampleRate = 48_000
+sampleRate = 44_100
 
 volume :: Float
 volume = 0.75
@@ -33,7 +33,7 @@ pitchStandard :: Hz
 pitchStandard = 440.0
 
 bpm :: Float
-bpm = 120.0
+bpm = 220.0
 
 beatDuration :: Seconds
 beatDuration = 60.0 / bpm
