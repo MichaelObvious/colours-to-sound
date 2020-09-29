@@ -11,4 +11,5 @@ type `stack run <path to the image>` in the terminal
 ## Notes
 
 **This project is not a finished software, use it at your own risk. Nothing is documented**
+
 Feel free to submit a pull request
