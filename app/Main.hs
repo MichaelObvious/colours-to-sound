@@ -3,8 +3,7 @@
 {-
 TODO:
   bpm
-  attack, decay
-  hue to note
+  attack
 -}
 
 module Main where
@@ -82,10 +81,25 @@ hsv2volume :: HSV -> Float
 hsv2volume (_, s, _) = s * volume
 
 image2wave :: (HSV -> Hz) -> DynamicImage -> [Pulse]
-image2wave hsvtofreq image = concat $ map (hsv2wave . head) $ group hsvs
+image2wave hsvtofreq image = concat $ map (applyADSR . hsv2wave . head) $ group hsvs
   where 
     hsvs = map rgb2hsv $ imageToPixels image
-    hsv2wave hsv = wave (hsvtofreq hsv) (hsv2volume hsv) 1.0 
+    hsv2wave hsv = wave (hsvtofreq hsv) (hsv2volume hsv) 1.0
+    applyADSR wave = zipWith (*) [adsr (n / (fromIntegral $ length wave)) | n <- [0.0 .. (fromIntegral $ length wave) :: Float]] wave
+
+adsr :: Pulse -> Pulse -- attack decay sustain release
+adsr x
+  | x <= 0.1 = a x
+  | x <= 0.4 = s1 x
+  | x <= 0.5 = d x
+  | x <= 0.8 = s2 x
+  | otherwise = r x
+  where
+    a n = 10 * n
+    s1 n = 1.0
+    d n = 1.4 - n
+    s2 n = 0.9
+    r n = -5 * n + 5
 
 wave :: Hz -> Float -> Seconds -> [Pulse]
 wave freq vol duration = map ((* vol) . sin . (* step)) [0.0 .. sampleRate * duration]
