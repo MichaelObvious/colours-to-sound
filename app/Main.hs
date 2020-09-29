@@ -1,11 +1,5 @@
 {-# LANGUAGE NumericUnderscores #-}
 
-{-
-TODO:
-  bpm
-  attack
--}
-
 module Main where
 
 import           Lib
@@ -27,6 +21,7 @@ type HSV = (Float, Float, Float)
 type Hz = Float
 type Seconds = Float
 type Pulse = Float
+type Beats = Float
 
 sampleRate :: Float
 sampleRate = 48_000
@@ -36,6 +31,12 @@ volume = 0.75
 
 pitchStandard :: Hz
 pitchStandard = 440.0
+
+bpm :: Float
+bpm = 120.0
+
+beatDuration :: Seconds
+beatDuration = 60.0 / bpm
 
 imageData2rgb :: [Word8] -> [RGB]
 imageData2rgb [] = []
@@ -81,10 +82,10 @@ hsv2volume :: HSV -> Float
 hsv2volume (_, s, _) = s * volume
 
 image2wave :: (HSV -> Hz) -> DynamicImage -> [Pulse]
-image2wave hsvtofreq image = concat $ map (applyADSR . hsv2wave . head) $ group hsvs
+image2wave hsvtofreq image = concat $ map (applyADSR . hsv2wave) $ group hsvs
   where 
     hsvs = map rgb2hsv $ imageToPixels image
-    hsv2wave hsv = wave (hsvtofreq hsv) (hsv2volume hsv) 1.0
+    hsv2wave hsvs_ = wave (hsvtofreq $ head hsvs_) (hsv2volume $ head hsvs_) $ fromIntegral $ length hsvs_
     applyADSR wave = zipWith (*) [adsr (n / (fromIntegral $ length wave)) | n <- [0.0 .. (fromIntegral $ length wave) :: Float]] wave
 
 adsr :: Pulse -> Pulse -- attack decay sustain release
@@ -101,8 +102,8 @@ adsr x
     s2 n = 0.9
     r n = -5 * n + 5
 
-wave :: Hz -> Float -> Seconds -> [Pulse]
-wave freq vol duration = map ((* vol) . sin . (* step)) [0.0 .. sampleRate * duration]
+wave :: Hz -> Float -> Beats -> [Pulse]
+wave freq vol beats = map ((* vol) . sin . (* step)) [0.0 .. sampleRate * beats * beatDuration]
   where
     step = (freq * 2 * pi) / sampleRate
 
